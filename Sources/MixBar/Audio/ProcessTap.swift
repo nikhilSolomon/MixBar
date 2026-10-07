@@ -69,12 +69,16 @@ final class ProcessTap {
         }
         aggregateID = aggregate
 
+        var formatSummary = ""
         if let format: AudioStreamBasicDescription = try? CA.get(tap, CA.address(kAudioTapPropertyFormat), initial: AudioStreamBasicDescription()) {
             inputIsFloat = format.mFormatID == kAudioFormatLinearPCM && (format.mFormatFlags & kAudioFormatFlagIsFloat) != 0 && format.mBitsPerChannel == 32
+            formatSummary += "tap: \(Int(format.mSampleRate)) Hz, \(format.mChannelsPerFrame) ch, \(format.mBitsPerChannel)-bit \(inputIsFloat ? "float" : "non-float")"
         }
         if let format: AudioStreamBasicDescription = try? CA.get(aggregate, CA.address(kAudioStreamPropertyVirtualFormat, scope: kAudioDevicePropertyScopeOutput), initial: AudioStreamBasicDescription()) {
             outputIsFloat = format.mFormatID == kAudioFormatLinearPCM && (format.mFormatFlags & kAudioFormatFlagIsFloat) != 0 && format.mBitsPerChannel == 32
+            formatSummary += " → device: \(Int(format.mSampleRate)) Hz, \(format.mChannelsPerFrame) ch, \(format.mBitsPerChannel)-bit \(outputIsFloat ? "float" : "non-float")"
         }
+        Log.write("tap for \(label) on \(outputDeviceUID): \(formatSummary)")
 
         var proc: AudioDeviceIOProcID?
         status = AudioDeviceCreateIOProcIDWithBlock(&proc, aggregate, queue) { [weak self] _, inputData, _, outputData, _ in
